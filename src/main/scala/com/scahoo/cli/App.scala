@@ -4,8 +4,6 @@ package cli
 object App extends App {
   import ScahooMonad._,
          scalaz._,
-         effect.LiftIO,
-         LiftIO._,
          Scalaz._
 
   def interp[P[_], A](implicit
@@ -15,7 +13,7 @@ object App extends App {
     contents <- S.readFile("src/main/scala/com/scahoo/cli/Effects.scala")
   } yield contents
 
-  val result = interp.foldMap(ScahooEffectToID)
+  val result = interp.foldMap(ScahooEffectToFuture)
 
-  println(result)
+  println(result.unsafePerformSyncAttempt)
 }

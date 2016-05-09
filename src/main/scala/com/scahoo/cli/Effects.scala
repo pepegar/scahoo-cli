@@ -3,8 +3,8 @@ package cli
 
 import scalaz.Free,
        scalaz.~>,
-       scalaz.Id._,
-       scalaz.Monad
+       scalaz.Monad,
+       scalaz.concurrent.Task
 
 case class Reference(signature: String, name: String)
 sealed trait ScahooEffect[A]
@@ -19,11 +19,14 @@ abstract trait ScahooLanguage[P[_]] {
 }
 
 object ScahooMonad {
-  object ScahooEffectToID extends (ScahooEffect ~> Id) {
-    def apply[A](eff: ScahooEffect[A]): A = eff match {
-      case ReadFile(path) => io.Source.fromFile(path).mkString("")
-      case ParseFile(contents) => Nil
-      case Search(tpe) => Nil
+  // use Task for concurrency and error handling
+  object ScahooEffectToFuture extends (ScahooEffect ~> Task) {
+    def apply[A](eff: ScahooEffect[A]): Task[A] = eff match {
+      case ReadFile(path) => Task {
+        io.Source.fromFile(path).mkString("")
+      }
+      case ParseFile(contents) => Task { Nil }
+      case Search(tpe) => Task { Nil }
     }
   }
 
@@ -34,9 +37,11 @@ object ScahooMonad {
     def bind[A, B](fa: FreeScahoo[A])(f: A => FreeScahoo[B]): FreeScahoo[B] = fa flatMap f
   }
 
-  implicit def freeScahooInstructions = new ScahooLanguage[FreeScahoo] with ScahooMonad {
+  trait FreeScahooInstructions extends ScahooLanguage[FreeScahoo] {
     def readFile(path: String): Free[ScahooEffect, String] = Free.liftF(ReadFile(path))
     def parseFile(contents: String): Free[ScahooEffect, List[Reference]] = Free.liftF(ParseFile(contents))
     def search(tpe: String): Free[ScahooEffect, List[Reference]] = Free.liftF(Search(tpe))
   }
+
+  implicit val pimpedScahoo = new FreeScahooInstructions with ScahooMonad
 }
