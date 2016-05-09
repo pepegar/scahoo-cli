@@ -6,8 +6,11 @@ version := "0.1-SNAPSHOT"
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")
 
+val scalazVersion = "7.2.0"
+
 libraryDependencies ++= Seq(
-  "org.scalaz" %% "scalaz-core" % "7.2.0",
+  "org.scalaz" %% "scalaz-core" % scalazVersion,
+  "org.scalaz" %% "scalaz-effect" % scalazVersion,
   "org.scalatest" %% "scalatest" % "2.2.6" % "test"
 )
 

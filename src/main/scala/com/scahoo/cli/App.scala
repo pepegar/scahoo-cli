@@ -1,12 +1,21 @@
 package com.scahoo
 package cli
 
-object App extends App with FreeScahooInstructions {
-  val whatever = for {
-    contents <- readFile("path")
-    references <- parseFile(contents)
-    result <- search(contents)
-  } yield references ::: result
+object App extends App {
+  import ScahooMonad._,
+         scalaz._,
+         effect.LiftIO,
+         LiftIO._,
+         Scalaz._
 
-  println(whatever.foldMap(ScahooLang.EvalEffectToID))
+  def interp[P[_], A](implicit
+    S: ScahooLanguage[P],
+    M: Monad[P]
+  ) = for {
+    contents <- S.readFile("src/main/scala/com/scahoo/cli/Effects.scala")
+  } yield contents
+
+  val result = interp.foldMap(ScahooEffectToID)
+
+  println(result)
 }
